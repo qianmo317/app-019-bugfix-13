@@ -88,6 +88,14 @@ interface ViewModel { id: 'front'|'top'|'side'; title: string; contentW: number;
   ```
 - **配合余量表（`src/lib/fit.ts:12`）**：`hardwood { tight: 0.2, standard: 0, loose: -0.3 }`、`softwood { tight: 0.3, standard: 0, loose: -0.4 }`；`loadFitTable` 逐格合并默认值，`JSON.parse` 抛错即整体回退，读到的是非缺省格也不会整表丢掉。
 - **三视图一致性（`src/geometry/views.ts:302`）**：`buildViews` 按类型分派到 5 个几何函数，每类返回 3 个 `ViewModel`；正视图 `contentW` 恒等于俯视图 `contentW`（单测逐类型断言）；大面截取长度常量 `LJ = 36mm`。
+- **圆榫/饼干榫均匀布孔（`src/lib/joints.ts:layoutEvenSpacing`，两类共用同一套规矩）**：板宽等分 N 段，孔（槽）打在各段中点——第一孔距板端、末孔距另一板端各为**半个孔距**，首末孔严格落在板内，绝不在板边上；两件从同一基准端起量时孔位一一对应。
+  ```text
+  totalUnits = round(板宽 / 0.1)
+  分界[k]    = round(totalUnits × k / N)         # 累积取整差分，Σ段宽严格闭合
+  孔位[k]    = round01(分界[k] + 段宽[k]/2)       # 段中点，半格四舍五入到 0.1mm 网格
+  端距       = 孔位[0]（= 右端板宽−末孔位，两端差 ≤ 0.1mm）；孔距 = 孔位[1] − 孔位[0] = 2×端距
+  ```
+  端距/孔距标注一律取实际孔位坐标（不用标称值），图纸标注与实物量尺一致；端距不足 2×榫径（圆榫）或饼干榫半长（#0=15 / #10=18 / #20=20mm）时输出劈裂/顶出警告。
 - **锯路补偿的实现范围**：燕尾正/俯视图每齿两侧各画一条 `saw` 线（数量 = 2 × 齿数，单测断言），搭接/圆榫/拼板视图不画锯切线（见 §11）。
 - **切割清单（`src/lib/cutlist.ts`）**：`buildCutList` 输出 `{ boardA, boardB, cautions }`，A 件按类型给 3~7 步、B 件给 1~5 步，步骤号有序；注意事项恒定包含锯路规则与「先在废料上试锯」。
 - **数值格式化（`src/lib/format.ts`）**：内部统一 0.1mm（`round01`），图纸与列表标注用 0.5mm 步进（`round05` / `fmtDrawing`，整数不带 `.0`），计算表格用 `fmt01` 保留一位小数。
@@ -103,10 +111,11 @@ interface ViewModel { id: 'front'|'top'|'side'; title: string; contentW: number;
 ## 10. 验收标准
 - **齿宽分配**：200 组随机参数（可复现种子 `mulberry32(20260916)`，板宽 50~600、齿数 2~12、角度比 6/7/8、kerf 0.8~2.2）闭合误差 ≤ 0.1mm；低于最小安全值等违规情形必须出警告，正常情形警告必须为空。
 - **直榫**：10 组手工核算用例，20mm 硬木标准配合 → 榫厚 6.7mm；紧配 +0.2、松配 −0.3；穿透榫眼深 = 孔板厚 + 1。
+- **圆榫/饼干榫布孔**：200mm 板 → 3 孔 33.4 / 100 / 166.7（端距 ≈33.3、孔距 66.7，首末孔不压边）；200mm 2 孔 → 50 / 150；板宽 20~900、孔数 2~8 全组合断言首孔 >0、末孔 <板宽、两端端距差 ≤0.1mm、末孔+端距闭合回板宽；圆榫与拼板同孔数同位；端距不足出劈裂警告。
 - **三视图**：六种类型逐一断言 `front.contentW === top.contentW`，每类 3 个视图，几何坐标不越界；燕尾锯切线数 = 2 × 齿数，齿序编号覆盖每个齿。
 - **导出/导入**：`importJSON(exportJSON(plan))` 与原文 `JSON.stringify` 全等；缺字段或坏 JSON 必须抛错；E2E 覆盖「导出 → 删除 → 导入 → viewBox 与参数一致」。
 - **性能**：参数改动到图纸重算 < 100ms（README 记录 0.51ms，本机重跑 0.57ms）。
-- **测试总量**：vitest 5 个文件 53 例 = 单元 43（dovetail 8 / tenon 13 / views 14 / store 8）+ 组件 10；Playwright E2E 7 例。
+- **测试总量**：vitest 6 个文件 63 例 = 单元 53（dovetail 8 / tenon 13 / joints 10 / views 14 / store 8）+ 组件 10；Playwright E2E 7 例。
 - **打印**：页面含 100mm 校验尺，实测 0→100 段误差 ≤ 1mm；打印调用与模板页可被 E2E 断言。
 - **容器**：`docker compose up -d --build` 后 `curl http://localhost:8099/healthz` 返回 `ok`，容器 healthy（详见 §12）。
 

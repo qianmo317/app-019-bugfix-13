@@ -77,12 +77,12 @@ export function buildCutList(joint: Joint, dt?: DovetailResult, tn?: TenonResult
   if (kind === 'dowel') {
     return {
       boardA: [
-        { no: 1, action: '画孔位', detail: '按图纸孔位线（含端部边距）过线' },
+        { no: 1, action: '画孔位', detail: '以同一基准端起量：第一孔端距 = 孔距/2（见图纸），其后每隔一个孔距一孔，末孔端距同为孔距/2' },
         { no: 2, action: '打孔', detail: '孔深打够并加深 1mm 排胶；用限位环控制深度' },
         { no: 3, action: '装定位销', detail: '孔内插定位销对位，试拼' },
       ],
-      boardB: [{ no: 1, action: '对位打孔', detail: '两板夹紧对齐后透过已有孔打另一板，保证同心' }],
-      cautions: [...cautions, '木榫要蘸胶满涂孔壁，敲入后擦净余胶'],
+      boardB: [{ no: 1, action: '对位打孔', detail: '两板端头对齐夹死、以同一条基准端起量（或透过已有孔打另一板），孔位与孔深保证同心' }],
+      cautions: [...cautions, '首末孔距板端只有半个孔距，孔位不得挪到板边上，否则端头必裂；木榫蘸胶满涂孔壁，敲入后擦净余胶'],
     }
   }
 
@@ -90,11 +90,11 @@ export function buildCutList(joint: Joint, dt?: DovetailResult, tn?: TenonResult
   return {
     boardA: [
       { no: 1, action: '刨平拼缝', detail: '拼缝刨平直，接缝对光不透' },
-      { no: 2, action: '画饼干榫位', detail: '按图纸位置线，端部边距见参数' },
+      { no: 2, action: '画饼干榫位', detail: '以同一基准端起量：第一榫端距 = 间距/2（见图纸），其后每隔一个间距一槽，末榫端距相同' },
       { no: 3, action: '切槽', detail: '饼干榫机切槽，深度按参数，槽内除尘' },
     ],
-    boardB: [{ no: 1, action: '同法切槽', detail: '两板槽位必须对齐，建议夹具定位后划线' }],
-    cautions: [...cautions, '拼板交替翻转纹理（ yearly growth 反向）减少翘曲'],
+    boardB: [{ no: 1, action: '同法切槽', detail: '两板端头对齐、以同一条基准端起量，槽位与槽深逐一对应，建议夹具定位后划线' }],
+    cautions: [...cautions, '首末槽距板端只有半个间距，槽位不得挪到板边上；拼板交替翻转纹理（ yearly growth 反向）减少翘曲'],
   }
 }
 

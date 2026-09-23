@@ -4,6 +4,7 @@ import type { Joint, JointKind } from '../types'
 import type { DovetailResult } from '../lib/dovetail'
 import type { TenonResult } from '../lib/tenon'
 import type { LapResult, DowelResult, PanelResult } from '../lib/joints'
+import { BISCUIT_HALF } from '../lib/joints'
 import { fmtDrawing } from '../lib/format'
 
 export type ViewId = 'front' | 'top' | 'side'
@@ -244,6 +245,8 @@ function lapViews(p: Joint['params'], lap: LapResult): ViewModel[] {
 function dowelViews(p: Joint['params'], dw: DowelResult): ViewModel[] {
   const W = p.boardA.width
   const t = p.boardA.thickness
+  const first = dw.positions[0] ?? 0
+  const last = dw.positions[dw.positions.length - 1] ?? W
   const front = base('front', '正视图 · 端面孔位', W, t)
   rect(front, 0, 0, W, t)
   dw.positions.forEach((x, i) => {
@@ -251,16 +254,20 @@ function dowelViews(p: Joint['params'], dw: DowelResult): ViewModel[] {
     front.marks.push({ x, y: t / 2, text: String(i + 1) })
   })
   hdim(front, 0, W, t + 12, `板宽 ${fmtDrawing(W)}`)
-  if (dw.positions[0] !== undefined) hdim(front, 0, dw.positions[0], -10, `端距 ${fmtDrawing(dw.positions[0])}`)
+  hdim(front, 0, first, -10, `端距 ${fmtDrawing(first)}`)
   front.texts.push({ x: 0, y: t + 24, text: `木榫 Ø${dw.dowelDia} × ${dw.dowelLength}，孔深 ${fmtDrawing(dw.holeDepth)}（含 1mm 排胶）`, anchor: 'start', cls: 'note' })
 
   const top = base('top', '俯视图 · 孔位划线', W, LJ)
   rect(top, 0, 0, W, LJ)
   for (const x of dw.positions) top.lines.push({ x1: x, y1: 0, x2: x, y2: LJ, cls: 'thin' })
   hdim(top, 0, W, LJ + 12, `板宽 ${fmtDrawing(W)}`)
+  // 两端端距 = 半个孔距，首末孔都在板内（标注取实际孔位）
+  hdim(top, 0, first, -10, `端距 ${fmtDrawing(first)}`)
+  hdim(top, last, W, -10, `端距 ${fmtDrawing(W - last)}`)
   if (dw.positions.length >= 2) {
-    hdim(top, dw.positions[0], dw.positions[1], -10, `孔距 ${fmtDrawing(dw.positions[1] - dw.positions[0])}`)
+    hdim(top, first, dw.positions[1], -20, `孔距 ${fmtDrawing(dw.positions[1] - first)}`)
   }
+  top.texts.push({ x: 0, y: LJ + 24, text: '两件均从同一基准端量起：端距＝孔距/2，对拼孔位一一对应', anchor: 'start', cls: 'note' })
 
   const side = base('side', '侧视图 · 孔深', t, LJ)
   rect(side, 0, 0, t, LJ)
@@ -274,23 +281,33 @@ function dowelViews(p: Joint['params'], dw: DowelResult): ViewModel[] {
 function panelViews(p: Joint['params'], pn: PanelResult): ViewModel[] {
   const W = p.boardA.width
   const t = p.boardA.thickness
+  const first = pn.positions[0] ?? 0
+  const last = pn.positions[pn.positions.length - 1] ?? W
+  const halfL = BISCUIT_HALF[pn.biscuitSize] ?? 12
   const front = base('front', '正视图 · 拼缝端面（饼干榫槽）', W, t)
   rect(front, 0, 0, W, t)
   pn.positions.forEach((x, i) => {
     front.lines.push(
-      { x1: x - 12, y1: t / 2 - 2, x2: x + 12, y2: t / 2 - 2, cls: 'thin' },
-      { x1: x - 12, y1: t / 2 + 2, x2: x + 12, y2: t / 2 + 2, cls: 'thin' },
+      { x1: x - halfL, y1: t / 2 - 2, x2: x + halfL, y2: t / 2 - 2, cls: 'thin' },
+      { x1: x - halfL, y1: t / 2 + 2, x2: x + halfL, y2: t / 2 + 2, cls: 'thin' },
     )
     front.marks.push({ x, y: t / 2, text: String(i + 1) })
   })
   hdim(front, 0, W, t + 12, `板宽 ${fmtDrawing(W)}`)
-  if (pn.positions[0] !== undefined) hdim(front, 0, pn.positions[0], -10, `端距 ${fmtDrawing(pn.positions[0])}`)
+  hdim(front, 0, first, -10, `端距 ${fmtDrawing(first)}`)
   front.texts.push({ x: 0, y: t + 24, text: `#${pn.biscuitSize} 饼干榫，槽深 ${fmtDrawing(pn.slotDepth)}；备选槽榫 ${pn.grooveWidth}×${fmtDrawing(pn.grooveDepth)}`, anchor: 'start', cls: 'note' })
 
   const top = base('top', '俯视图 · 榫位划线', W, LJ)
   rect(top, 0, 0, W, LJ)
   for (const x of pn.positions) top.lines.push({ x1: x, y1: 0, x2: x, y2: LJ, cls: 'thin' })
   hdim(top, 0, W, LJ + 12, `板宽 ${fmtDrawing(W)}`)
+  // 两端端距 = 半个榫间距，首末榫都在板内（标注取实际孔位）
+  hdim(top, 0, first, -10, `端距 ${fmtDrawing(first)}`)
+  hdim(top, last, W, -10, `端距 ${fmtDrawing(W - last)}`)
+  if (pn.positions.length >= 2) {
+    hdim(top, first, pn.positions[1], -20, `间距 ${fmtDrawing(pn.positions[1] - first)}`)
+  }
+  top.texts.push({ x: 0, y: LJ + 24, text: '两件均从同一基准端量起：端距＝间距/2，对拼榫位一一对应', anchor: 'start', cls: 'note' })
 
   const side = base('side', '侧视图 · 槽深', t, LJ)
   rect(side, 0, 0, t, LJ)
