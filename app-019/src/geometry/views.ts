@@ -251,15 +251,20 @@ function dowelViews(p: Joint['params'], dw: DowelResult): ViewModel[] {
     front.marks.push({ x, y: t / 2, text: String(i + 1) })
   })
   hdim(front, 0, W, t + 12, `板宽 ${fmtDrawing(W)}`)
-  if (dw.positions[0] !== undefined) hdim(front, 0, dw.positions[0], -10, `端距 ${fmtDrawing(dw.positions[0])}`)
+  const dFirst = dw.positions[0]
+  const dLast = dw.positions[dw.positions.length - 1]
+  if (dFirst !== undefined) hdim(front, 0, dFirst, -10, `端距 ${fmtDrawing(dw.edgeMargin)}`)
+  if (dLast !== undefined) hdim(front, dLast, W, -10, `端距 ${fmtDrawing(dw.edgeMargin)}`)
   front.texts.push({ x: 0, y: t + 24, text: `木榫 Ø${dw.dowelDia} × ${dw.dowelLength}，孔深 ${fmtDrawing(dw.holeDepth)}（含 1mm 排胶）`, anchor: 'start', cls: 'note' })
 
   const top = base('top', '俯视图 · 孔位划线', W, LJ)
   rect(top, 0, 0, W, LJ)
   for (const x of dw.positions) top.lines.push({ x1: x, y1: 0, x2: x, y2: LJ, cls: 'thin' })
   hdim(top, 0, W, LJ + 12, `板宽 ${fmtDrawing(W)}`)
+  if (dFirst !== undefined) hdim(top, 0, dFirst, -10, `端距 ${fmtDrawing(dw.edgeMargin)}`)
+  if (dLast !== undefined) hdim(top, dLast, W, -10, `端距 ${fmtDrawing(dw.edgeMargin)}`)
   if (dw.positions.length >= 2) {
-    hdim(top, dw.positions[0], dw.positions[1], -10, `孔距 ${fmtDrawing(dw.positions[1] - dw.positions[0])}`)
+    hdim(top, dw.positions[0], dw.positions[1], -20, `孔距 ${fmtDrawing(dw.positions[1] - dw.positions[0])}`)
   }
 
   const side = base('side', '侧视图 · 孔深', t, LJ)
@@ -284,13 +289,21 @@ function panelViews(p: Joint['params'], pn: PanelResult): ViewModel[] {
     front.marks.push({ x, y: t / 2, text: String(i + 1) })
   })
   hdim(front, 0, W, t + 12, `板宽 ${fmtDrawing(W)}`)
-  if (pn.positions[0] !== undefined) hdim(front, 0, pn.positions[0], -10, `端距 ${fmtDrawing(pn.positions[0])}`)
+  const pFirst = pn.positions[0]
+  const pLast = pn.positions[pn.positions.length - 1]
+  if (pFirst !== undefined) hdim(front, 0, pFirst, -10, `端距 ${fmtDrawing(pn.edgeMargin)}`)
+  if (pLast !== undefined) hdim(front, pLast, W, -10, `端距 ${fmtDrawing(pn.edgeMargin)}`)
   front.texts.push({ x: 0, y: t + 24, text: `#${pn.biscuitSize} 饼干榫，槽深 ${fmtDrawing(pn.slotDepth)}；备选槽榫 ${pn.grooveWidth}×${fmtDrawing(pn.grooveDepth)}`, anchor: 'start', cls: 'note' })
 
   const top = base('top', '俯视图 · 榫位划线', W, LJ)
   rect(top, 0, 0, W, LJ)
   for (const x of pn.positions) top.lines.push({ x1: x, y1: 0, x2: x, y2: LJ, cls: 'thin' })
   hdim(top, 0, W, LJ + 12, `板宽 ${fmtDrawing(W)}`)
+  if (pFirst !== undefined) hdim(top, 0, pFirst, -10, `端距 ${fmtDrawing(pn.edgeMargin)}`)
+  if (pLast !== undefined) hdim(top, pLast, W, -10, `端距 ${fmtDrawing(pn.edgeMargin)}`)
+  if (pn.positions.length >= 2) {
+    hdim(top, pn.positions[0], pn.positions[1], -20, `榫距 ${fmtDrawing(pn.positions[1] - pn.positions[0])}`)
+  }
 
   const side = base('side', '侧视图 · 槽深', t, LJ)
   rect(side, 0, 0, t, LJ)

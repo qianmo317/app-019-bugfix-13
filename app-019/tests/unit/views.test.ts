@@ -63,6 +63,50 @@ describe('三视图一致性（断言：正视图宽 = 俯视图宽）', () => {
     const front = views.find((v) => v.id === 'front')!
     expect(front.marks.map((m) => m.text)).toEqual(r.dovetail!.teeth.map((t) => String(t.index)))
   })
+
+  it('圆木榫：首/末孔不压边，端距=孔距/2，正视/俯视均标两端端距，俯视标孔距', () => {
+    const joint = makeJoint('dowel')
+    const r = computeJoint(joint)
+    const views = buildViews(joint, r)
+    const dw = r.dowel!
+    const W = joint.params.boardA.width
+    // 几何：孔严格落在板内且两端对称
+    expect(dw.positions[0]).toBeGreaterThan(0)
+    expect(dw.positions[dw.positions.length - 1]).toBeLessThan(W)
+    expect(dw.positions[0]).toBeCloseTo(dw.edgeMargin, 6)
+    expect(W - dw.positions[dw.positions.length - 1]).toBeCloseTo(dw.edgeMargin, 6)
+    expect(Math.abs(dw.edgeMargin - dw.step / 2)).toBeLessThanOrEqual(0.1)
+    // 标注：正视图两条端距（左端 0→首孔、右端 末孔→W）
+    const front = views.find((v) => v.id === 'front')!
+    const frontEdgeDims = front.dims.filter((d) => d.label.includes('端距'))
+    expect(frontEdgeDims).toHaveLength(2)
+    expect(frontEdgeDims[0].from).toBe(0)
+    expect(frontEdgeDims[0].to).toBe(dw.positions[0])
+    expect(frontEdgeDims[1].from).toBe(dw.positions[dw.positions.length - 1])
+    expect(frontEdgeDims[1].to).toBe(W)
+    // 标注：俯视图含端距两条 + 孔距一条
+    const top = views.find((v) => v.id === 'top')!
+    expect(top.dims.filter((d) => d.label.includes('端距'))).toHaveLength(2)
+    expect(top.dims.filter((d) => d.label.includes('孔距'))).toHaveLength(1)
+  })
+
+  it('饼干榫：与圆木榫同规矩——首末槽居中于等分格，正视/俯视标两端端距，俯视标榫距', () => {
+    const joint = makeJoint('panel-glue')
+    const r = computeJoint(joint)
+    const views = buildViews(joint, r)
+    const pn = r.panel!
+    const W = joint.params.boardA.width
+    expect(pn.positions[0]).toBeGreaterThan(0)
+    expect(pn.positions[pn.positions.length - 1]).toBeLessThan(W)
+    expect(pn.positions[0]).toBeCloseTo(pn.edgeMargin, 6)
+    expect(W - pn.positions[pn.positions.length - 1]).toBeCloseTo(pn.edgeMargin, 6)
+    expect(Math.abs(pn.edgeMargin - pn.step / 2)).toBeLessThanOrEqual(0.1)
+    const front = views.find((v) => v.id === 'front')!
+    expect(front.dims.filter((d) => d.label.includes('端距'))).toHaveLength(2)
+    const top = views.find((v) => v.id === 'top')!
+    expect(top.dims.filter((d) => d.label.includes('端距'))).toHaveLength(2)
+    expect(top.dims.filter((d) => d.label.includes('榫距'))).toHaveLength(1)
+  })
 })
 
 describe('切割清单', () => {
